@@ -1,0 +1,132 @@
+Known bugs:
+
+	- If you build the wish with extended Tcl, you have
+          to set the TCL_LIBRARY path to the extended Tcl
+	  library path before you call the new wish.
+
+	- If you are using -width and -height to set the
+          geometry of the tkSteal widget, and get a locked
+          server or a X server error about insufficient 
+          memory, your embedded application may use a grid
+          for its geometry. In this case setting the widget
+          geometry to something like 500x400 will result in
+          a "real" geometry of something like 5000x5000.
+          Just set the geometry to the correct gridded
+          value (e.g. for xterm something like "-width 25
+          -height 80").
+
+	- If your embedded application is not resized beyond
+          a certain size when you resize the tkSteal widget
+          you should try to increase the initial size of the
+          embedded application (at the applications
+          commandline). I don't know why this happens (must
+          be some WM thing I do not know).
+
+	- certain window managers seem to require multiple
+	  calls of XReparentWindow to reparent a window. To
+	  make this working correctly, tkXAccess.c contains
+	  a define (REPARENT_LOOPS) specifying how many
+	  reparent events should be sent. This is not a
+	  "clean" solution, but nothing else seems to help
+	  (help is welcome :-).
+
+        - Under MWM, it is not possible to place a window
+          (namely the window of the application to be
+          embedded) outside the visible area. So please
+          don't play around with this temporarily appearing 
+          window. It will get reparented quite soon, and
+          playing around with it may cause X11 errors.
+
+	- the scanning for the toplevel window to be
+	  reparented (used by TkEmacs and TkSteal) is making 
+	  some assumptions concerning the window manager
+	  structure. It expects that the window with the
+	  window name (which is the window that will be
+	  reparented) is on one of the first three levels in
+	  the X server window structure. This works fine with
+	  twm, vtwm and mwm (and should work with others as
+	  well... if not, let me know).
+
+	- The configuration and the Makefiles are not very
+	  robust. The automatic detection of dependencies
+	  is not completely implemented (especially across
+	  directories). So, if you want to rebuild the
+	  source tree, it is probably a good idea to call:
+
+		make clean
+
+	  first.
+
+        - If you get an error message about an undefined
+          symbol ___main, you have built your Tk libraries
+          with gcc and the TkSteal code with cc. Please
+          use the same compiler for both packages.
+
+        - If you get the message "Creating archive file
+          '..../libtk/libtk.a'" or a list of undefined
+          symbols starting with "_Tk_", the libtk creation
+          is not working correctly. Please make sure that
+          there is a file "../tk4.0/libtk.a". Then you
+          should check whether the command:
+            "ar r libtk.a *.o"
+          works on your system (in the libtk subdirectory).
+          To do this, please copy the ../tk4.0/libtk.a file
+          manually to the libtk subdirectory, and change to 
+          that subdirectory. After calling the ar command as
+          described above please check the contents of the
+          library (and the size). If the library only
+          contains the local .o files, you may have to adapt
+          the ar command in libtk/Makefile.in and rerun the
+          configuration and the building (after calling "make
+          clean"). Or you did not call "make prepare" before
+          you called "make wish".
+
+
+Known bugs in TkEmacs:
+
+	- The file cl.elc from the standard distribution of
+	  emacs 18.59 seems to have problems. Please replace
+	  or override it with a (local) newly byte compiled
+	  version.
+
+	- if the Emacs Lisp function "y-or-n-p" is called
+	  from a process filter, i.e. from the TkEmacs
+	  widget, it cannot be interrupted with C-g due to
+	  an already known bug in Emacs 18.58. On some
+	  machines this will result in the abort of Emacs
+	  (possibly with a core dump), on others in an
+	  endless loop with Emacs emitting an (also) endless
+	  loop of beeps. In this case it may be difficult to
+	  kill the process because the X server is busy
+	  beeping. In Emacs 18.59 this problem seems to be
+	  solved for some OS versions.
+
+	- The connection between the TkEmacs widget and
+	  emacs is relatively loose. That means, that
+	  especially the scrollbar handling may not always
+	  be correct.
+
+	- if event processing in wish is blocked for a long
+	  time, it can happen that the polling of the
+	  scrollbar destroys a previous result from emacs
+	  (at least that is the explanation I found :-).
+
+	- with emacs 19 (older versions), the popup menus appear
+          at the wrong location.
+
+	- Lucid emacs does not understand the commandline
+	  switch -rn. Instead it uses the option -title to
+	  set the window name (title). If you are using
+	  Lucid emacs, please take care that you are using
+	  the correct commandline option.
+
+
+Known bugs in tkemacs:
+
+	- the menu showing the buffers is a little
+	  sensitive. It can happen that you only get the
+	  correct pull-down menu after you have clicked the
+	  Buffers menubutton a few times. Sometimes, the
+	  contents of the menu are not correct.
+
+

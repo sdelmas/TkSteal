@@ -1,0 +1,1238 @@
+dnl	This file is an input file used by the GNU "autoconf" program to
+dnl	generate the file "configure", which is run during Tk installation
+dnl	to configure the system for the local environment.
+AC_INIT(Makefile.in)
+
+#--------------------------------------------------------------------
+#       Load the local configuration from config.local
+#--------------------------------------------------------------------
+# The default package selection for this configure
+TK_LIBRARY_NAME=""
+nogcc=0
+AC_ARG_WITH(config-local, [  --with-config-local     read the local configuration file], config_local=1, config_local=0)
+if test $config_local = 1; then
+  echo "Loading default configuration from: config.local"
+  . ./config.local
+else
+  echo "Loading default configuration from: config.init"
+  . ./config.init
+fi
+
+#--------------------------------------------------------
+#       Checking ARCH and shared library support.
+#       This code is taken from the tcltk_shlib package
+#       published by Xiaokun Zhu (xiaokun@stats.gla.ac.uk)
+#--------------------------------------------------------
+MACHINE=`${srcdir}/config.guess`;
+echo "Machine is $MACHINE";
+OS_TYPE=`${srcdir}/config.sep $MACHINE`;
+echo "OS-Type is $OS_TYPE (UNKNOWN is no problem)";
+AC_ARG_WITH(noshlib, [  --with-noshlib          no shared libraries], noshlib=1)
+if test $noshlib = 0; then
+  SHARE_ARCH="$OS_TYPE";
+  echo "Shared library architechure is $SHARE_ARCH (UNKNOWN means no shared libs)";
+else
+  SHARE_ARCH="UNKNOWN"
+fi
+
+SOTKREV=4.0
+SHAREDCC='rm -f $*.o $(SHDIR)/$*.o; \\\
+	$(CC) -c $(CC_SWITCHES) $(PICFLAGS) $<; \\\
+	mv $*.o $(SHDIR)/$*.o; \\'
+
+case "$SHARE_ARCH" in
+  SVR4)
+    echo "SVR4 shared library supported"
+    UNSHARED=""
+    PICFLAGS="-K pic"
+    SHLIBSO="lib\$(LOCAL_LIB_NAME).so.$SOTKREV"
+    SHLIBSO_BLD='(cd shared; \\\
+	/usr/ccs/bin/ld -G -z text -h $(SHLIBSO) -o ../$(SHLIBSO) $(OBJS) $(SHARED_LIBS) ); \\\
+	$(INSTALL_DATA) $(SHLIBSO) $(LIB_DIR); \\\
+	rm -f $(LIB_DIR)/lib$(SHLIBSO).so; \\\
+	(cd $(LIB_DIR); rm -f lib$(LOCAL_LIB_NAME).so; \\\
+	 $(LN_S) ./$(SHLIBSO) lib$(LOCAL_LIB_NAME).so);'
+    SHDIR=shared
+    ;;
+  SUN) 
+    echo "SunOs shared library supported"
+    UNSHARED="tclMtherr.o"
+    PICFLAGS="-PIC" 
+    SHLIBSO="lib\$(LOCAL_LIB_NAME).so.$SOTKREV"
+    SHLIBSO_BLD='(cd shared; \\\
+	ld -assert pure-text -o ../$(SHLIBSO) $(OBJS) $(SHARED_LIBS) ); \\\
+	$(INSTALL_DATA) $(SHLIBSO) $(LIB_DIR)'
+    SHDIR=shared
+    ;;
+  HP) 
+    echo "HP-UX 9.01 shared library supported"
+    UNSHARED=""
+    PICFLAGS="+z" 
+    SHLIBSO="lib\$(LOCAL_LIB_NAME).so"
+    SHLIBSO_BLD='(cd shared; \\\
+	ld -b -n -o ../$(SHLIBSO) $(OBJS) $(SHARED_LIBS) ); \\\
+	$(INSTALL_DATA) $(SHLIBSO)'
+    SHDIR=shared
+    ;;
+  IBM) 
+    echo "IBM R6000 shared library supported"
+    UNSHARED=""
+    PICFLAGS="-bM\:SRE" 
+    SHLIBSO="lib\$(LOCAL_LIB_NAME).a"
+    SHLIBSO_BLD='cd shared; \\\
+	ar cr ./$(SHLIBSO)~ $(OBJS) ); \\\
+	dump -g $(SHLIBSO)~ | sed -n -e "s/^\$(F1) 	$(F2)*$(F1)0-9$(F2)$(F1)0-9$(F2)*$(F1)	 $(F2)*\($(F1)^	 .$(F2)$(F1)^	 $(F2)*\)$$/\001/p" > $(SHLIBSO).syms; \\\
+	ld -o shr.o $(SHLIBSO)~ -H512 -T512 -bM\:SRE -bE\:$(SHLIBSO).syms -lc -lm; \\\
+	rm -f $(SHLIBSO)~; \\\
+	ar cr $(SHLIBSO)~ shr.o $(UNSHARED); \\\
+	rm -f $(SHLIBSO).syms $(SHLIBSO) shr.o; \\\
+	mv $(SHLIBSO)~ $(SHLIBSO); \\\
+	cd ..'
+    SHDIR=shared
+    ;;
+  TEST) 
+    echo "Testing shared library supported on non shared OS"
+    UNSHARED=""
+    PICFLAGS="" 
+    SHLIBSO="lib\$(LOCAL_LIB_NAME).so.$SOTKREV"
+    SHLIBSO_BLD='(cd shared; \\\
+	ar r ../$(SHLIBSO) $(OBJS); \\\
+        $(RANLIB) ../$(SHLIBSO) ); \\\
+	$(INSTALL_DATA) $(SHLIBSO) $(LIB_DIR)'
+    SHDIR=shared
+    ;;
+
+#
+# add new platform here
+# ...
+#
+  *)
+    echo "Shared libraries unsupported on platform $SHARE_ARCH (this is no problem)!"
+    SHAREDCC=""
+    UNSHARED=""
+    PICFLAGS=""
+    SHLIBSO=""
+    SHLIBSO_BLD='-@echo "no shared libraries"'
+    SHDIR=""
+    ;;
+esac
+
+AC_SUBST(SHAREDCC)
+AC_SUBST(UNSHARED)
+AC_SUBST(SHLIBSO)
+AC_SUBST(SHLIBSO_BLD)
+AC_SUBST(SHDIR)
+
+#--------------------------------------------------------------------
+#       Look for the original tk source. By default tk4.0
+#       is used.
+#--------------------------------------------------------------------
+GET_TARGETS=""
+PATCH_TARGETS=""
+BUILD_TARGETS=""
+TK_SOURCE=""
+TK_VERSION=""
+TCL_SOURCE=""
+TCL_VERSION=""
+KANJI_NAME=""
+KANJI_FLAGS=""
+KANJIOBJS=""
+if test -r ../tk4.0/tk.h; then
+  TK_SOURCE="../tk4.0"
+  TK_VERSION="4.0"
+elif test -r ../tk4.0b5/tk.h; then
+  TK_SOURCE="../tk4.0b5"
+  TK_VERSION="4.0b5"
+elif test -r ../tk4.0b4/tk.h; then
+  TK_SOURCE="../tk4.0b4"
+  TK_VERSION="4.0b4"
+elif test -r ../tk4.0b3/tk.h; then
+  TK_SOURCE="../tk4.0b3"
+  TK_VERSION="4.0b3"
+elif test -r ../tk4.0b2/tk.h; then
+  TK_SOURCE="../tk4.0b2"
+  TK_VERSION="4.0b2"
+elif test -r ../tk4.0b1/tk.h; then
+  TK_SOURCE="../tk4.0b1"
+  TK_VERSION="4.0b1"
+else
+  echo "WARNING: could not find a matching directory for tk4.0!"
+fi
+if test -r ../tcl7.4/tcl.h; then
+  TCL_SOURCE="../tcl7.4"
+  TCL_VERSION="7.4"
+elif test -r ../tcl7.4b5/tcl.h; then
+  TCL_SOURCE="../tcl7.4b5"
+  TCL_VERSION="7.4b5"
+elif test -r ../tcl7.4b4/tcl.h; then
+  TCL_SOURCE="../tcl7.4b4"
+  TCL_VERSION="7.4b4"
+elif test -r ../tcl7.4b3/tcl.h; then
+  TCL_SOURCE="../tcl7.4b3"
+  TCL_VERSION="7.4b3"
+elif test -r ../tcl7.4b2/tcl.h; then
+  TCL_SOURCE="../tcl7.4b2"
+  TCL_VERSION="7.4b2"
+elif test -r ../tcl7.4b1/tcl.h; then
+  TCL_SOURCE="../tcl7.4b1"
+  TCL_VERSION="7.4b1"
+else
+  echo "WARNING: could not find a matching directory for tcl!"
+fi  
+
+if test $kanji = 0; then
+  AC_ARG_WITH(kanji, [  --with-kanji            add kanji support], kanji=1)
+  if test $kanji = 1; then
+    if test -r ../tk4.0-jp/tk.h; then
+      KANJI_NAME="-jp"
+      TK_SOURCE="../tk4.0-jp"
+      TK_VERSION="4.0"
+    elif test -r ../tk4.0jp/tk.h; then
+      KANJI_NAME="-jp"
+      TK_SOURCE="../tk4.0jp"
+      TK_VERSION="4.0"
+    else
+      echo "WARNING: cannot find Kanji Tk version!"
+    fi
+    if test -r ../tcl7.3-jp/tcl.h; then
+     TCL_SOURCE="../tcl7.3-jp"
+      TCL_VERSION="7.3"
+    elif test -r ../tcl7.3jp/tcl.h; then
+      TCL_SOURCE="../tcl7.3jp"
+      TCL_VERSION="7.3"
+    else
+      echo "WARNING: cannot find Kanji Tcl version!"
+    fi
+  fi
+fi
+if test $kanji = 1; then
+  KANJI_FLAGS="-DKANJI -DKINPUT2"
+  KANJIOBJS="tkWStr.o tkKinput2.o tkCtext.o"
+  GET_TARGETS="$GET_TARGETS get-kanji-files"
+fi
+
+if test "$SHDIR" != ""; then
+  if test ! -d $TK_SOURCE/$SHDIR; then
+    echo "WARNING: could not find a shared tk directory!"
+    echo "         Building of shared libraries disabled!"
+    SHAREDCC=""
+    UNSHARED=""
+    PICFLAGS=""
+    SHLIBSO=""
+    SHLIBSO_BLD=""
+    SHDIR=""
+  fi
+fi
+
+test_prefix="/usr/local"
+if test "$prefix" != "" -a "$prefix" != "NONE"; then
+  test_prefix=$prefix
+fi
+AC_MSG_CHECKING(Tcl)
+echo "I found Tcl: $TCL_VERSION"
+AC_MSG_CHECKING(Tk)
+echo "I found Tk: $TK_VERSION"
+AC_ARG_WITH(tklibrary, [  --with-tklibrary=DIR    set TK_LIBRARY to this value], TK_LIBRARY_NAME=$withval)
+if test "$TK_LIBRARY_NAME" = ""; then
+  if test -d $test_prefix/lib/tk$TK_VERSION; then
+    TK_LIBRARY_NAME="\$(prefix)/lib/tk$TK_VERSION"
+  elif test -d $test_prefix/lib/tk$TK_VERSION; then
+    TK_LIBRARY_NAME="\$(prefix)/lib/tk$TK_VERSION"
+  elif test -d $test_prefix/lib/tk$TK_VERSION$KANJI_NAME; then
+    TK_LIBRARY_NAME="\$(prefix)=/lib/tk$TK_VERSION$KANJI_NAME"
+  elif test -d $test_prefix/lib/tk; then
+    TK_LIBRARY_NAME="\$(prefix)/lib/tk"
+  else
+    echo "WARNING: could not find the TK_LIBRARY path! If you did not"
+    echo "         install Tk yet, please do that before you continue."
+    echo "         Otherwise you probably use a non standard name for"
+    echo "         the Tk library directory. Perform a single step"
+    echo "         building as described in the README. Change the"
+    echo "         TK_LIBRARY variable in the toplevel Makefile with"
+    echo "         the --with-tklibrary parameter!!!"
+    echo "         Or you continue with the building, and install"
+    echo "         the package by hand. In that case you have to set"
+    echo "         the environment variable TK_LIBRARY to the correct"
+    echo "         Tk library directory!!!"
+    TK_LIBRARY_NAME="\$(prefix)/lib/tk"
+  fi
+fi
+echo "TK_LIBRARY is set to: $TK_LIBRARY_NAME"
+CB_LIBRARY_NAME="\$(prefix)/lib/cb"
+AC_ARG_WITH(cblibrary, [  --with-cblibrary=DIR    set CB_LIBRARY to this value], CB_LIBRARY_NAME=$withval)
+
+AC_SUBST(TCL_SOURCE)
+AC_SUBST(TCL_VERSION)
+AC_SUBST(TK_SOURCE)
+AC_SUBST(TK_VERSION)
+AC_SUBST(KANJI_NAME)
+AC_SUBST(KANJI_FLAGS)
+AC_SUBST(KANJIOBJS)
+AC_SUBST(TCLTK_LD_CMD)
+AC_SUBST(WISH_NAME)
+AC_SUBST(GET_TK_SHARED_OBJECTS)
+AC_SUBST(TK_LIBRARY_NAME)
+AC_SUBST(CB_LIBRARY_NAME)
+
+#--------------------------------------------------------------------
+#       Here begins the "standard" Tk configure.
+#--------------------------------------------------------------------
+
+AC_PROG_INSTALL
+AC_PROG_RANLIB
+AC_LN_S
+AC_PROG_CC
+AC_HAVE_HEADERS(unistd.h limits.h macros.h)
+AC_ARG_WITH(nogcc, [  --with-nogcc            explicitly disable use of gcc], nogcc=1)
+if test $nogcc = 1; then
+  CC="cc"
+  GCC=0
+fi
+
+#--------------------------------------------------------------------
+#       Test for header files.
+#--------------------------------------------------------------------
+
+#--------------------------------------------------------------------
+#	Include sys/select.h if it exists and if it supplies things
+#	that appear to be useful and aren't already in sys/types.h.
+#	This appears to be true only on the RS/6000 under AIX.  Some
+#	systems like OSF/1 have a sys/select.h that's of no use, and
+#	other systems like SCO UNIX have a sys/select.h that's
+#	pernicious.  If "fd_set" isn't defined anywhere then set a
+#	special flag.
+#--------------------------------------------------------------------
+
+AC_MSG_CHECKING([fd_set and sys/select])
+AC_TRY_COMPILE([#include <sys/types.h>],
+	[fd_set readMask, writeMask;], tk_ok=yes, tk_ok=no)
+if test $tk_ok = no; then
+    AC_HEADER_EGREP(fd_mask, sys/select.h, tk_ok=yes)
+    if test $tk_ok = yes; then
+        AC_DEFINE(HAVE_SYS_SELECT_H)
+    fi
+fi
+AC_MSG_RESULT($tk_ok)
+if test $tk_ok = no; then
+    AC_DEFINE(NO_FD_SET)
+fi
+
+#--------------------------------------------------------------------
+#	Supply a substitute for stdlib.h if it doesn't define strtol,
+#	strtoul, or strtod (which it doesn't in some versions of SunOS).
+#--------------------------------------------------------------------
+
+AC_MSG_CHECKING(stdlib.h)
+AC_HEADER_EGREP(strtol, stdlib.h, tk_ok=yes, tk_ok=no)
+AC_HEADER_EGREP(strtoul, stdlib.h, , tk_ok=no)
+AC_HEADER_EGREP(strtod, stdlib.h, , tk_ok=no)
+if test $tk_ok = no; then
+    AC_DEFINE(NO_STDLIB_H)
+fi
+AC_MSG_RESULT($tk_ok)
+
+#--------------------------------------------------------------------
+#	Check for various typedefs and provide substitutes if
+#	they don't exist.
+#--------------------------------------------------------------------
+
+AC_MODE_T
+AC_PID_T
+AC_SIZE_T
+AC_UID_T
+
+#--------------------------------------------------------------------
+#	Locate the X11 header files and the X11 library archive.  Try
+#	the ac_find_x macro first, but if it doesn't find the X stuff
+#	(e.g. because there's no xmkmf program) then check through
+#	a list of possible directories.
+#--------------------------------------------------------------------
+
+AC_PATH_X
+not_really_there=""
+if test "$no_x" = ""; then
+    if test "$x_includes" = ""; then
+        AC_TRY_CPP([#include <X11/XIntrinsic.h>], , not_really_there="yes")
+    else
+        if test ! -r $x_includes/X11/Intrinsic.h; then
+            not_really_there="yes"
+        fi
+    fi
+fi
+if test "$no_x" = "yes" -o "$not_really_there" = "yes"; then
+    echo checking for X11 header files
+    XINCLUDES="# no special path needed"
+    AC_TRY_CPP([#include <X11/Intrinsic.h>], , XINCLUDES="nope")
+    if test "$XINCLUDES" = nope; then
+        dirs="/usr/unsupported/include /usr/local/include /usr/X386/include /usr
+/include/X11R4 /usr/X11R5/include /usr/include/X11R5 /usr/openwin/include /usr/X
+11/include /usr/sww/include"
+        for i in $dirs ; do
+            if test -r $i/X11/Intrinsic.h; then
+                XINCLUDES=" -I$i"
+            fi
+        done
+    fi
+else
+    if test "$x_includes" != ""; then
+        XINCLUDES=-I$x_includes
+    else
+        XINCLUDES="# no special path needed"
+    fi
+fi
+if test "$XINCLUDES" = nope; then
+  echo "Warning:  couldn't find any X11 include files."
+  XINCLUDES="# no include files found"
+fi
+AC_SUBST(XINCLUDES)
+
+if test "$no_x" = yes; then
+    XLIBSW=nope
+    if test "$XLIBSW" = nope; then
+        dirs="/usr/unsupported/lib /usr/local/lib /usr/X386/lib /usr/lib/X11R4 /
+usr/X11R5/lib /usr/lib/X11R5 /usr/openwin/lib /usr/X11/lib /usr/sww/X11/lib"
+        for i in $dirs ; do
+            if test -r $i/libX11.a; then
+                XLIBSW="-L$i -lX11"
+            fi
+        done
+    fi
+else
+    if test "$x_libraries" = ""; then
+        XLIBSW=-lX11
+    else
+        XLIBSW="-L$x_libraries -lX11"
+    fi
+fi
+if test "$XLIBSW" = nope ; then
+    AC_CHECK_LIB(Xwindow, XCreateWindow, XLIBSW=-lXwindow)
+fi
+if test "$XLIBSW" = nope ; then
+    echo "Warning:  couldn't find the X11 library archive.  Using -lX11."
+    XLIBSW=-lX11
+fi
+AC_SUBST(XLIBSW)
+
+#--------------------------------------------------------------------
+#       Check for the existence of various libraries.  The order here
+#       is important, so that then end up in the right order in the
+#       command line generated by make.  The -lsocket and -lnsl libraries
+#       require a couple of special tricks:
+#       1. Use "connect" and "accept" to check for -lsocket, and
+#          "gethostbyname" to check for -lnsl.
+#       2. Use each function name only once:  can't redo a check because
+#          autoconf caches the results of the last check and won't redo it.
+#       3. Use -lnsl and -lsocket only if they supply procedures that
+#          aren't already present in the normal libraries.  This is because
+#          IRIX 5.2 has libraries, but they aren't needed and they're
+#          bogus:  they goof up name resolution if used.
+#       4. On some SVR4 systems, can't use -lsocket without -lnsl too.
+#          To get around this problem, check for both libraries together
+#          if -lsocket doesn't work by itself.
+#--------------------------------------------------------------------
+
+AC_CHECK_LIB(Xbsd, main, [LIBS="$LIBS -lXbsd"])
+
+tk_checkBoth=0
+AC_CHECK_FUNC(connect, tk_checkSocket=0, tk_checkSocket=1)
+if test "$tk_checkSocket" = 1; then
+    AC_CHECK_LIB(socket, main, LIBS="$LIBS -lsocket", tk_checkBoth=1)
+fi
+if test "$tk_checkBoth" = 1; then
+    tk_oldLibs=$LIBS
+    LIBS="$LIBS -lsocket -lnsl"
+    AC_CHECK_FUNC(accept, tk_checkNsl=0, [LIBS=$tk_oldLibs])
+fi
+AC_CHECK_FUNC(gethostbyname, , AC_CHECK_LIB(nsl, main, [LIBS="$LIBS -lnsl"]))
+
+#--------------------------------------------------------------------
+# One more check related to the X libraries.  The standard releases
+# of Ultrix don't support the "xauth" mechanism, so send won't work
+# unless TK_NO_SECURITY is defined.  However, there are usually copies
+# of the MIT X server available as well, which do support xauth.
+# Check for the MIT stuff and use it if it exists.
+#
+# Note: can't use ac_check_lib macro (at least, not in Autoconf 2.1)
+# because it can't deal with the "-" in the library name.
+#--------------------------------------------------------------------
+
+if test -d /usr/include/mit ; then
+    AC_MSG_CHECKING([MIT X libraries])
+    tk_oldCFlags=$CFLAGS
+    CFLAGS="$CFLAGS -I/usr/include/mit"
+    tk_oldLibs=$LIBS
+    LIBS="$LIBS -lX11-mit"
+    AC_TRY_LINK([
+        #include <X11/Xlib.h>
+    ], [
+        XOpenDisplay(0);
+    ], [
+        AC_MSG_RESULT(yes)
+        XLIBSW="-lX11-mit"
+        XINCLUDES="-I/usr/include/mit"
+    ], AC_MSG_RESULT(no))
+    CFLAGS=$tk_oldCFlags
+    LIBS=$tk_oldLibs
+fi
+
+#--------------------------------------------------------------------
+#       Figure out how to find out whether a FILE structure contains
+#       buffered readable data.  Some known names for the count field:
+#               _cnt:           Most UNIX systems
+#               __cnt:          HPUX
+#               _r:             BSD
+#               readCount:      Sprite
+#       Or, in GNU libc there are two fields, _gptr and _egptr, which
+#       have to be compared.
+#--------------------------------------------------------------------
+
+AC_MSG_CHECKING([count field in FILE structures])
+AC_TRY_COMPILE([#include <stdio.h>],
+        [FILE *f = stdin; f->_cnt = 0;], fcnt="_cnt", )
+if test "$fcnt" = ""; then
+    AC_TRY_COMPILE([#include <stdio.h>],
+        [FILE *f = stdin; f->__cnt = 0;], fcnt="__cnt", )
+fi
+if test "$fcnt" = ""; then
+    AC_TRY_COMPILE([#include <stdio.h>],
+        [FILE *f = stdin; f->_r = 0;], fcnt="_r", )
+fi
+if test "$fcnt" = ""; then
+    AC_TRY_COMPILE([#include <stdio.h>],
+        [FILE *f = stdin; f->readCount = 0;], fcnt="readCount", )
+fi
+if test "$fcnt" != ""; then
+    AC_DEFINE_UNQUOTED(TK_FILE_COUNT, $fcnt)
+fi
+if test "$fcnt" = ""; then
+    AC_TRY_COMPILE([#include <stdio.h>],
+        [FILE *f = stdin; f->_gptr = f->egptr;],
+        tk_ok=yes, tk_ok=no)
+    if test $tk_ok = yes; then
+        AC_DEFINE(TK_FILE_GPTR)
+        fcnt="_gptr/_egptr"
+    fi
+fi
+if test "$fcnt" = ""; then
+    AC_TRY_COMPILE([#include <stdio.h>],
+        [FILE *f = stdin; f->_IO_read_ptr = f->_IO_read_end;],
+        tk_ok=yes, tk_ok=no)
+    if test $tk_ok = yes; then
+        AC_DEFINE(TK_FILE_READ_PTR)
+        fcnt="_IO_read_ptr/_IO_read_end"
+    fi
+fi
+if test "$fcnt" = ""; then
+    AC_MSG_RESULT([not found; must supply TkReadDataPending procedure])
+else
+    AC_MSG_RESULT("$fcnt")
+fi
+
+#--------------------------------------------------------------------
+#       On a few very rare systems, all of the libm.a stuff is
+#       already in libc.a.  Set compiler flags accordingly.
+#       Also, Linux requires the "ieee" library for math to
+#       work right (and it must appear before "-lm").
+#--------------------------------------------------------------------
+
+MATH_LIBS=""
+AC_CHECK_FUNC(sin, , MATH_LIBS="-lm")
+AC_CHECK_LIB(ieee, main, [MATH_LIBS="-lieee $MATH_LIBS"])
+AC_SUBST(MATH_LIBS)
+
+#--------------------------------------------------------------------
+#       If this system doesn't have a memmove procedure, use memcpy
+#       instead.
+#--------------------------------------------------------------------
+
+AC_CHECK_FUNC(memmove, , [AC_DEFINE(memmove, memcpy)])
+
+#--------------------------------------------------------------------
+#       Figure out whether "char" is unsigned.  If so, set a
+#       #define.
+#--------------------------------------------------------------------
+
+AC_MSG_CHECKING(type of "char")
+AC_TRY_RUN([
+int main()
+{
+    char c;
+    int i;
+    c = 0377;
+    i = c;
+    if (i == -1) {
+        exit(0);
+    }
+    exit(1);
+}], tk_signed=1, tk_signed=0)
+if test $tk_signed = 0; then
+    AC_DEFINE(CHAR_UNSIGNED)
+    AC_MSG_RESULT(unsigned)
+else
+    AC_MSG_RESULT(signed)
+fi
+
+#--------------------------------------------------------------------
+#       SGI systems don't use the BSD form of the gettimeofday function,
+#       but they have a BSDgettimeofday function that can be used instead.
+#
+#       Also, check for the existence of a gettimeofday declaration,
+#       to tkPort.h can declare it if it isn't already declared.
+#--------------------------------------------------------------------
+
+AC_CHECK_FUNC(BSDgettimeofday, AC_DEFINE(HAVE_BSDGETTIMEOFDAY))
+AC_MSG_CHECKING([for gettimeofday declaration])
+AC_EGREP_HEADER(gettimeofday, sys/time.h, AC_MSG_RESULT(present), [
+    AC_MSG_RESULT(missing)
+    AC_DEFINE(GETTOD_NOT_DECLARED)
+])
+
+#--------------------------------------------------------------------
+#       Under Solaris 2.4, strtod returns the wrong value for the
+#       terminating character under some conditions.  Check for this
+#       and if the problem exists use a substitute procedure
+#       "fixstrtod" (provided by Tcl) that corrects the error.
+#--------------------------------------------------------------------
+
+AC_CHECK_FUNC(strtod, tk_strtod=1, tk_strtod=0)
+if test "$tk_strtod" = 1; then
+    AC_MSG_CHECKING([for Solaris 2.4 strtod bug])
+    AC_TRY_RUN([
+        extern double strtod();
+        int main()
+        {
+            char *string = "NaN";
+            char *term;
+            strtod(string, &term);
+            if ((term != string) && (term[-1] == 0)) {
+                exit(1);
+            }
+            exit(0);
+        }], AC_MSG_RESULT(ok), [
+            AC_MSG_RESULT(buggy)
+            AC_DEFINE(strtod, fixstrtod)
+        ])
+fi
+
+#--------------------------------------------------------------------
+#	Check to see whether the system supports the matherr function
+#	and its associated type "struct exception".
+#--------------------------------------------------------------------
+
+AC_MSG_CHECKING(for matherr support)
+AC_TRY_COMPILE([#include <math.h>], [
+struct exception x;
+x.type = DOMAIN;
+x.type = SING;
+], [
+  AC_MSG_RESULT(needed)
+  AC_DEFINE(NEED_MATHERR)],
+AC_MSG_RESULT(not needed))
+
+#--------------------------------------------------------------------
+#       Now check the several -with-PACKAGE commands, to
+#       see what we want to add to this wish
+#--------------------------------------------------------------------
+
+# search for locally installed libraries too
+if test "$exec_prefix" != ""; then
+  LDFLAGS="${LDFLAGS} -L${exec_prefix}/lib"
+else
+  LDFLAGS="${LDFLAGS} -L/usr/local/lib"
+fi
+
+echo "looking for additional packages..."
+EXTENSION_X11_LIBS=""
+GET_LIBTK=""
+LIBTK_OBJS=""
+
+# TkIcon
+TKICON_CFLAGS=""
+TKICON_OBJS=""
+TKICON_LIBS=""
+TKICON_LIB=""
+TKICON_LOCALLIB_OBJS=""
+TKICON_TKLIB_OBJS=""
+AC_ARG_WITH(tkicon, [  --with-tkicon           add the TkIcon package], tkicon=1)
+if test $tkicon = 1; then
+  echo adding TkIcon
+  if test "$WISH_NAME" != "icon-wish"; then
+    GET_TARGETS="$GET_TARGETS get-tkicon-files"
+  fi
+  BUILD_TARGETS="$BUILD_TARGETS build-libtkicon"
+  TKICON_CFLAGS="-I../libTkMegaWidget -I../libTkIcon -DUSE_TKICON"
+  TKICON_LOCALLIB_OBJS="tkIcon.o tkCanvEdge.o tkCanvIcon.o tkCanvLayout.o"
+  TKICON_LIB="TkIcon"
+  if test "$SHDIR" != ""; then
+    TKICON_LIBS="-lTkIcon"
+    TKICON_SHARED_LIBS=""
+  else
+    TKICON_LIBS="../libTkIcon/libTkIcon.a"
+    TKICON_SHARED_LIBS=""
+  fi
+  tix=1
+fi
+AC_SUBST(TKICON_CFLAGS)
+AC_SUBST(TKICON_OBJS)
+AC_SUBST(TKICON_LIBS)
+AC_SUBST(TKICON_LIB)
+AC_SUBST(TKICON_LOCALLIB_OBJS)
+AC_SUBST(TKICON_TKLIB_OBJS)
+
+# TkSteal
+TKSTEAL_CFLAGS=""
+TKSTEAL_OBJS=""
+TKSTEAL_LIBS=""
+TKSTEAL_LIB=""
+TKSTEAL_LOCALLIB_OBJS=""
+TKSTEAL_TKLIB_OBJS=""
+AC_ARG_WITH(tksteal, [  --with-tksteal          add the TkSteal package], tksteal=1)
+if test $tksteal = 1; then
+  echo adding TkSteal
+  if test "$WISH_NAME" != "steal-wish"; then
+    GET_TARGETS="$GET_TARGETS get-tksteal-files"
+  fi
+  BUILD_TARGETS="$BUILD_TARGETS build-libtksteal"
+  TKSTEAL_CFLAGS="-I../libTkSteal -DUSE_XACCESS"
+  TKSTEAL_LOCALLIB_OBJS="tkXAccess.o"
+  TKSTEAL_LIB="TkSteal"
+  if test "$SHDIR" != ""; then
+    TKSTEAL_LIBS="-lTkSteal"
+    TKSTEAL_SHARED_LIBS=""
+  else
+    TKSTEAL_LIBS="../libTkSteal/libTkSteal.a"
+    TKSTEAL_SHARED_LIBS=""
+  fi
+fi
+AC_SUBST(TKSTEAL_CFLAGS)
+AC_SUBST(TKSTEAL_OBJS)
+AC_SUBST(TKSTEAL_LIBS)
+AC_SUBST(TKSTEAL_SHARED_LIBS)
+AC_SUBST(TKSTEAL_LIB)
+AC_SUBST(TKSTEAL_LOCALLIB_OBJS)
+AC_SUBST(TKSTEAL_TKLIB_OBJS)
+
+# TkMegaWidget
+TKMEGAWIDGET_CFLAGS=""
+TKMEGAWIDGET_OBJS=""
+TKMEGAWIDGET_LIBS=""
+TKMEGAWIDGET_LIB=""
+TKMEGAWIDGET_LOCALLIB_OBJS=""
+TKMEGAWIDGET_TKLIB_OBJS=""
+AC_ARG_WITH(tkmegawidget, [  --with-tkmegawidget     add the TkMegaWidget package], tkmegawidget=1)
+AC_ARG_WITH(tkmegawidget-des, [  --with-tkmegawidget-des      add the DES support], tkmegawidget_des=1; tkmegawidget=1)
+AC_ARG_WITH(tkmegawidget-localdes, [  --with-tkmegawidget-localdes add the DES support (use the local DES library)], tkmegawidget_localdes=1; tkmegawidget=1)
+AC_ARG_WITH(tkmegawidget-debug, [  --with-tkmegawidget-debug  add the debugger code to the TkMegaWidget], tkmegawidget_debug=1)
+if test $tkmegawidget = 1; then
+  echo adding TkMegaWidget
+  if test "$WISH_NAME" != "mega-wish"; then
+    GET_TARGETS="$GET_TARGETS get-tkmegawidget-files"
+  fi
+  BUILD_TARGETS="$BUILD_TARGETS build-libtkmegawidget"
+  TKMEGAWIDGET_CFLAGS="-I../libTkMegaWidget -DUSE_MEGAWIDGET"
+  TKMEGAWIDGET_LOCALLIB_OBJS="tkMegaWidget.o"
+  TKMEGAWIDGET_LIB="TkMegaWidget"
+  if test "$SHDIR" != ""; then
+    TKMEGAWIDGET_LIBS="-lTkMegaWidget"
+    TKMEGAWIDGET_SHARED_LIBS=""
+  else
+    TKMEGAWIDGET_LIBS="../libTkMegaWidget/libTkMegaWidget.a"
+    TKMEGAWIDGET_SHARED_LIBS=""
+  fi
+  if test $tkmegawidget_debug = 1; then
+    TKMEGAWIDGET_CFLAGS="$TKMEGAWIDGET_CFLAGS -DUSE_DBG"
+    TKMEGAWIDGET_LOCALLIB_OBJS="$TKMEGAWIDGET_LOCALLIB_OBJS Dbg.o"
+  fi
+  if test $tkmegawidget_des = 1 -o $tkmegawidget_localdes = 1; then
+    TKMEGAWIDGET_CFLAGS="$TKMEGAWIDGET_CFLAGS -DUSE_DES"
+  fi
+  if test $tkmegawidget_des = 1 -o $tkmegawidget_localdes = 1; then
+    AC_CHECK_LIB(des, des_set_key, has_global_des=1, has_global_des=0)
+    if test $tkmegawidget_localdes = 1 -o $has_global_des = 0; then
+      echo "using the local DES library"
+      BUILD_TARGETS="$BUILD_TARGETS build-libdes"
+      TKMEGAWIDGET_CFLAGS="$TKMEGAWIDGET_CFLAGS -I../libdes"
+      TKMEGAWIDGET_LIBS="$TKMEGAWIDGET_LIBS ../libdes/libdes.a"
+      if test "$SHDIR" != ""; then
+        TKMEGAWIDGET_SHARED_LIBS=""
+      fi
+    else
+      TKMEGAWIDGET_LIBS="$TKMEGAWIDGET_LIBS -ldes"
+      if test "$SHDIR" != ""; then
+        TKMEGAWIDGET_SHARED_LIBS=""
+      fi
+    fi
+  fi
+fi
+AC_SUBST(TKMEGAWIDGET_CFLAGS)
+AC_SUBST(TKMEGAWIDGET_OBJS)
+AC_SUBST(TKMEGAWIDGET_LIBS)
+AC_SUBST(TKMEGAWIDGET_SHARED_LIBS)
+AC_SUBST(TKMEGAWIDGET_LIB)
+AC_SUBST(TKMEGAWIDGET_LOCALLIB_OBJS)
+AC_SUBST(TKMEGAWIDGET_TKLIB_OBJS)
+
+# TkMobal
+TKMOBAL_CFLAGS=""
+TKMOBAL_OBJS=""
+TKMOBAL_LIBS=""
+TKMOBAL_LIB=""
+TKMOBAL_LOCALLIB_OBJS=""
+TKMOBAL_TKLIB_OBJS=""
+AC_ARG_WITH(tkmobal, [  --with-tkmobal          add the TkMobal package], tkmobal=1)
+if test $tkmobal = 1; then
+  echo adding TkMobal
+  if test "$WISH_NAME" != "mobal-wish"; then
+    GET_TARGETS="$GET_TARGETS get-tkmobal-files"
+  fi
+  BUILD_TARGETS="$BUILD_TARGETS build-libtkmobal"
+  TKMOBAL_CFLAGS="-I../libTkMobal -DUSE_MOBAL"
+  TKMOBAL_LOCALLIB_OBJS="tkMobalExt.o"
+  TKMOBAL_LIB="TkMobal"
+  if test "$SHDIR" != ""; then
+    TKMOBAL_LIBS="-lTkMobal"
+    TKMOBAL_SHARED_LIBS=""
+  else
+    TKMOBAL_LIBS="../libTkMobal/libTkMobal.a"
+    TKMOBAL_SHARED_LIBS=""
+  fi
+fi
+AC_SUBST(TKMOBAL_CFLAGS)
+AC_SUBST(TKMOBAL_OBJS)
+AC_SUBST(TKMOBAL_LIBS)
+AC_SUBST(TKMOBAL_SHARED_LIBS)
+AC_SUBST(TKMOBAL_LIB)
+AC_SUBST(TKMOBAL_LOCALLIB_OBJS)
+AC_SUBST(TKMOBAL_TKLIB_OBJS)
+
+# TkCB
+TKCB_CFLAGS=""
+TKCB_OBJS=""
+TKCB_LIBS=""
+TKCB_LIB=""
+TKCB_LOCALLIB_OBJS=""
+TKCB_TKLIB_OBJS=""
+AC_ARG_WITH(tkcb, [  --with-tkcb             add the CIMBuilder extensions], tkcb=1)
+if test $tkcb = 1; then
+  echo adding TkCB
+  GET_TARGETS="$GET_TARGETS get-tkcb-sourcefiles"
+  if test "$WISH_NAME" != "cb-wish"; then
+    GET_TARGETS="$GET_TARGETS get-tkcb-files"
+  fi
+  GET_LIBTK="get-libtk"
+  PATCH_TARGETS="$PATCH_TARGETS patch-tkcb-files"
+  BUILD_TARGETS="$BUILD_TARGETS build-libtkcb"
+  LIBTK_OBJS="$LIBTK_OBJS tkListbox.o"
+  TKCB_CFLAGS="-I../libTkCB -DUSE_CB"
+  TKCB_OBJS=""
+  TKCB_LOCALLIB_OBJS="tkCBExt.o tkTreeTable.o tclXsignal.o tclXcmds.o"
+  TKCB_LIB="TkCB"
+  if test "$SHDIR" != ""; then
+    TKCB_LIBS="-lTkCB"
+    TKCB_SHARED_LIBS=""
+  else
+    TKCB_LIBS="../libTkCB/libTkCB.a"
+    TKCB_SHARED_LIBS=""
+  fi
+  tix=1
+fi
+AC_SUBST(TKCB_CFLAGS)
+AC_SUBST(TKCB_OBJS)
+AC_SUBST(TKCB_LIBS)
+AC_SUBST(TKCB_SHARED_LIBS)
+AC_SUBST(TKCB_LIB)
+AC_SUBST(TKCB_LOCALLIB_OBJS)
+AC_SUBST(TKCB_TKLIB_OBJS)
+
+# BLT
+BLT_CFLAGS=""
+BLT_OBJS=""
+BLT_LIBS=""
+BLT_LIB=""
+AC_ARG_WITH(blt, [  --with-blt              add the BLT package], blt=1)
+if test $blt = 1; then
+  echo adding BLT
+  AC_CHECK_LIB(BLT, Blt_Init, has_global_blt=1, has_global_blt=0, $XLIBSW $LIBS)
+  if test $has_global_blt = 1; then
+    BLT_CFLAGS="-DUSE_BLT"
+    BLT_LIBS="-L\${LIB_DIR} -lBLT"
+  else
+    echo "searching for a libBLT.a in ../blt/src"
+    if test -f ../blt/src/libBLT.a; then
+      echo "using ../blt/src/libBLT.a instead of a globally installed libBLT.a"
+      BLT_CFLAGS="-DUSE_BLT -I../../blt/src"
+      BLT_LIBS="../../blt/src/libBLT.a"
+    else
+      echo "WARNING: Could not find a libBLT.a!"
+    fi
+  fi
+fi
+AC_SUBST(BLT_CFLAGS)
+AC_SUBST(BLT_OBJS)
+AC_SUBST(BLT_LIBS)
+AC_SUBST(BLT_LIB)
+
+# ITCL
+ITCL_CFLAGS=""
+ITCL_OBJS=""
+ITCL_LIBS=""
+ITCL_LIB=""
+AC_ARG_WITH(itcl, [  --with-itcl             add the ITcl package], itcl=1)
+if test $itcl = 1; then
+  echo adding itcl
+  AC_CHECK_LIB(itcl, Itcl_Init, has_global_itcl=1, has_global_itcl=0)
+  if test $has_global_itcl = 1; then
+    ITCL_CFLAGS="-DUSE_ITCL"
+    ITCL_LIBS="-L\${LIB_DIR} -litcl"
+  else
+    echo "searching for a libitcl.a in ../itcl/src"
+    if test -f ../itcl/src/libitcl.a; then
+      echo "using ../itcl/src/libitcl.a instead of a globally installed libitcl.a"
+      ITCL_CFLAGS="-DUSE_ITCL -I../../itcl/src"
+      ITCL_LIBS="../../itcl/src/libitcl.a"
+    else
+      echo "WARNING: Could not find a libitcl.a!"
+    fi
+  fi
+fi
+AC_SUBST(ITCL_CFLAGS)
+AC_SUBST(ITCL_OBJS)
+AC_SUBST(ITCL_LIBS)
+AC_SUBST(ITCL_LIB)
+
+# TIX
+TIX_CFLAGS=""
+TIX_OBJS=""
+TIX_LIBS=""
+TIX_LIB=""
+AC_ARG_WITH(tix, [  --with-tix             add the Tix package], tix=1)
+if test $tix = 1; then
+  echo adding tix
+  AC_CHECK_LIB(tix, Tix_Init, has_global_tix=1, has_global_tix=0)
+  if test $has_global_tix = 1; then
+    TIX_CFLAGS="-DUSE_TIX"
+    TIX_LIBS="-L\${LIB_DIR} -ltix"
+  else
+    echo "searching for a libtix.a in ../tix/src"
+    if test -f ../tix/src/libtix.a; then
+      echo "using ../tix/src/libtix.a instead of a globally installed libtix.a"
+      TIX_CFLAGS="-DUSE_TIX -I../../tix/src"
+      TIX_LIBS="../../tix/src/libtix.a"
+    else
+      echo "WARNING: Could not find a libtix.a!"
+    fi
+  fi
+fi
+AC_SUBST(TIX_CFLAGS)
+AC_SUBST(TIX_OBJS)
+AC_SUBST(TIX_LIBS)
+AC_SUBST(TIX_LIB)
+
+# EXPECT
+EXPECT_CFLAGS=""
+EXPECT_OBJS=""
+EXPECT_LIBS=""
+EXPECT_LIB=""
+AC_ARG_WITH(expect, [  --with-expect           add the expect package], expect=1)
+if test $expect = 1; then
+  echo adding expect
+  AC_CHECK_LIB(expectk, Exp_Init, has_global_expect=1, has_global_expect=0, $XLIBSW $LIBS)
+  if test $has_global_expect = 1; then
+    EXPECT_CFLAGS="-DUSE_EXPECT -DTCL_DEBUGGER"
+    EXPECT_LIBS="-L\${LIB_DIR} -lexpectk"
+  else
+    echo "searching for a libexpectk.a in ../expect"
+    if test -f ../expect/libexpectk.a; then
+      echo "using ../expect/libexpectk.a instead of a globally installed libexpectk.a"
+      EXPECT_CFLAGS="-DUSE_EXPECT -DTCL_DEBUGGER -I../../expect"
+      EXPECT_LIBS="../../expect/libexpectk.a"
+    else
+      echo "WARNING: Could not find a libexpectk.a!"
+    fi
+  fi
+fi
+AC_SUBST(EXPECT_CFLAGS)
+AC_SUBST(EXPECT_OBJS)
+AC_SUBST(EXPECT_LIBS)
+AC_SUBST(EXPECT_LIB)
+
+# Extended Tcl
+EXTENDED_CFLAGS=""
+EXTENDED_OBJS=""
+EXTENDED_LIBS=""
+EXTENDED_LIB=""
+AC_ARG_WITH(tclX, [  --with-tclx             add the TclX package], tclX=1)
+if test $tclX = 1; then
+  echo adding TclX
+  AC_CHECK_LIB(tclx, TclX_Init, has_global_tclx=1, has_global_tclx=0)
+  if test $has_global_tclx = 1; then
+    EXTENDED_CFLAGS="-I/usr/local/include -DTK_EXTENDED"
+    EXTENDED_LIBS="-L\${LIB_DIR} -ltkx -ltclx"
+  else
+    echo "searching for a libtclx.a in ../tclX/tclmaster/lib"
+    if test -f ../tclX/tclmaster/lib/libtclx.a -a -f ../tclX/tkmaster/lib/libtkx.a; then
+      echo "using ../tclX/tclmaster/lib/libtclx.a instead of a globally installed libtclx.a"
+      EXTENDED_CFLAGS="-I/usr/local/include -I../../tclX/src -I../../tclX/tksrc -DTK_EXTENDED"
+      EXTENDED_LIBS="../../tclX/tkmaster/lib/libtkx.a ../../tclX/tclmaster/lib/libtclx.a"
+    else
+      echo "WARNING: Could not find a libtclx.a!"
+    fi
+  fi
+fi
+AC_SUBST(EXTENDED_CFLAGS)
+AC_SUBST(EXTENDED_OBJS)
+AC_SUBST(EXTENDED_LIBS)
+AC_SUBST(EXTENDED_LIB)
+
+# Tcl-DP
+TCLDP_CFLAGS=""
+TCLDP_OBJS=""
+TCLDP_LIBS=""
+TCLDP_LIB=""
+AC_ARG_WITH(tcldp, [  --with-tcldp            add the Tcl-DP package], tcldp=1)
+if test $tcldp = 1; then
+  echo adding Tcl-DP
+  AC_CHECK_LIB(dpnetwork, Tdp_Init, has_global_dpnetwork=1, has_global_dpnetwork=0)
+  if test $has_global_dpnetwork = 1; then
+    TCLDP_CFLAGS="-DUSE_TCL_DP"
+    TCLDP_LIBS="-L\${LIB_DIR} -ldpnetwork"
+    AC_CHECK_LIB(dputil, main, [TCLDP_LIBS="$TCLDP_LIBS -ldputil"])
+  else
+    echo "searching for a libdpnetwork.a in ../tcl-dp"
+    if test -f ../tcl-dp/libdpnetwork.a; then
+      echo "using ../tcl-dp/libdpnetwork.a instead of a globally installed libdpnetwork.a"
+      TCLDP_CFLAGS="-DUSE_TCL_DP -I../../tcl-dp"
+      TCLDP_LIBS="../../tcl-dp/libdpnetwork.a"
+      if test -f ../tcl-dp/libdputil.a; then
+        TCLDP_LIBS="$TCLDP_LIBS ../../tcl-dp/libdputil.a"
+        echo "using ../tcl-dp/libdputil.a instead of a globally installed libdputil.a"
+      fi
+    else
+      echo "WARNING: Could not find a libdpnetwork.a!"
+    fi
+  fi
+fi
+AC_SUBST(TCLDP_CFLAGS)
+AC_SUBST(TCLDP_OBJS)
+AC_SUBST(TCLDP_LIBS)
+AC_SUBST(TCLDP_LIB)
+
+# TURNDIAL
+TURNDIAL_CFLAGS=""
+TURNDIAL_OBJS=""
+TURNDIAL_LIBS=""
+TURNDIAL_LIB=""
+AC_ARG_WITH(turndial, [  --with-turndial      add the tkTurndial package], turndial=1)
+if test $turndial = 1; then
+  echo adding tkTurndial
+  AC_CHECK_LIB(tkTurndial, Turndial_Init, has_global_turndial=1, has_global_turndial=0, $XLIBSW $LIBS)
+  if test $has_global_turndial = 1; then
+    TURNDIAL_CFLAGS="-DUSE_TURNDIAL"
+    TURNDIAL_LIBS="-L\${LIB_DIR} -ltkTurndial"
+  else
+    echo "searching for a libtkTurndial.a in ../tkTurndial"
+    if test -f ../tkTurndial/libtkTurndial.a; then
+      echo "using ../tkTurndial/libtkTurndial.a instead of a globally installed libtkTurndial.a"
+      TURNDIAL_CFLAGS="-DUSE_TURNDIAL -I../../tkTurndial"
+      TURNDIAL_LIBS="../../tkTurndial/libtkTurndial.a"
+    else
+      echo "WARNING: Could not find a libtkTurndial.a!"
+    fi
+  fi
+fi
+AC_SUBST(TURNDIAL_CFLAGS)
+AC_SUBST(TURNDIAL_OBJS)
+AC_SUBST(TURNDIAL_LIBS)
+AC_SUBST(TURNDIAL_LIB)
+
+# Xpm
+XPM_LIB=""
+AC_ARG_WITH(xpm, [  --with-xpm              add the Xpm3 library], xpm=1)
+if test $xpm = 1; then
+  echo adding the Xpm library
+  AC_CHECK_LIB(Xpm, XpmCreatePixmapFromBuffer, has_global_xpm=1, has_global_xpm=0)
+  if test $has_global_xpm = 1; then
+    XPM_LIB="-L\${LIB_DIR} -lXpm"
+  else
+    echo "searching for a libXpm.a in ../xpm"
+    if test -f ../xpm/libXpm.a; then
+      echo "using ../xpm/libXpm.a instead of a globally installed libXpm.a"
+      XPM_LIB="../../xpm/libXpm.a"
+    else
+      echo "WARNING: Could not find a libXpm.a!"
+    fi
+  fi
+fi
+AC_SUBST(XPM_LIB)
+
+# Tcl-Load
+TCLLOAD_CFLAGS=""
+TCLLOAD_OBJS=""
+TCLLOAD_LIBS=""
+TCLLOAD_LIB=""
+AC_ARG_WITH(tclload, [  --with-tclload          add the dynamic loading package], tclload=1)
+if test $tclload = 1; then
+  case "$OS_TYPE" in
+    SVR4)
+      case "$MACHINE" in
+        sparc-*-solaris2* | sparc-*-sunos5*)
+          echo adding Tcl-LOAD for SUN-SOLARIS
+          if test -f ../shells/solaris.o; then
+            TCLLOAD_CFLAGS="-DUSE_LOAD"
+            TCLLOAD_OBJS="../../shells/solaris.o"
+          else
+            echo "WARNING: Could not find ../shells/solaris.o!"
+          fi
+          ;;
+      esac
+      ;;
+    SUN) 
+      echo adding Tcl-LOAD for SUN-OS
+      if test -f ../shells/sunos.o; then
+        TCLLOAD_CFLAGS="-DUSE_LOAD"
+        TCLLOAD_OBJS="../../shells/sunos.o"
+      else
+        echo "WARNING: Could not find ../shells/sunos.o!"
+      fi
+      ;;
+    HP) 
+      echo adding Tcl-LOAD for HPUX
+      if test -f ../shells/hpux.o; then
+        TCLLOAD_CFLAGS="-DUSE_LOAD"
+        TCLLOAD_OBJS="../../shells/hpux.o"
+      else
+        echo "WARNING: Could not find ../shells/hpux.o!"
+      fi
+      ;;
+    TEST) 
+      echo adding Tcl-LOAD for TEST
+      if test -f ../shells/test.o; then
+        TCLLOAD_CFLAGS="-DUSE_LOAD"
+        TCLLOAD_OBJS="../../shells/test.o"
+      else
+        echo "WARNING: Could not find ../shells/test.o!"
+      fi
+      ;;
+    *)
+      case "$MACHINE" in
+        alpha-dec-osf* | alpha-*-osf*)
+          echo adding Tcl-LOAD for OSF/1
+          if test -f ../shells/osf1.o; then
+            TCLLOAD_CFLAGS="-DUSE_LOAD"
+            TCLLOAD_OBJS="../../shells/osf1.o"
+          else
+            echo "WARNING: Could not find ../shells/osf1.o!"
+          fi
+          ;;
+      esac
+      ;;
+  esac
+fi
+AC_SUBST(TCLLOAD_CFLAGS)
+AC_SUBST(TCLLOAD_OBJS)
+AC_SUBST(TCLLOAD_LIBS)
+AC_SUBST(TCLLOAD_LIB)
+
+# build the linker command
+TCLTK_LD_CMD=""
+GET_TK_SHARED_OBJECTS=""
+if test "$SHDIR" != ""; then
+  if test "$OS_TYPE" = "SVR4"; then
+    TCLTK_LD_CMD="-L\$(LIB_DIR) -L\$(X11_LIB_DIR) -R\$(LIB_DIR) -R\$(X11_LIB_DIR) -l\$(TK_LIB_NAME) -ltcl"
+  else
+    TCLTK_LD_CMD="-L\$(LIB_DIR) -L\$(X11_LIB_DIR) -l$(TK_LIB_NAME) -ltcl"
+  fi
+  GET_TK_SHARED_OBJECTS="-@cp $TK_SOURCE/$SHDIR/* libtk/$SHDIR"
+else
+  if test "$GET_LIBTK" != ""; then
+    TCLTK_LD_CMD="../libtk/lib\$(TK_LIB_NAME).a ../$TCL_SOURCE/libtcl.a"
+  else
+    TCLTK_LD_CMD="../$TK_SOURCE/libtk.a ../$TCL_SOURCE/libtcl.a"
+  fi
+fi
+
+# test if we have to rebuild libtk
+if test "$GET_LIBTK" != ""; then
+  BUILD_TARGETS="get-libtk build-libtk $BUILD_TARGETS"
+fi
+
+AC_SUBST(LIBTK_OBJS)
+AC_SUBST(GET_TARGETS)
+AC_SUBST(PATCH_TARGETS)
+AC_SUBST(BUILD_TARGETS)
+AC_SUBST(EXTENSION_X11_LIBS)
+
+#--------------------------------------------------------------------
+#       Create the new config.local
+#--------------------------------------------------------------------
+echo creating config.local
+
+rm config.local
+echo "WISH_NAME=$WISH_NAME" > config.local
+if test "$prefix" != "" -a "$prefix" != "NONE"; then
+  echo "if test \"\$prefix\" = \"\" -o \"\$prefix\" = \"NONE\"; then" >> config.local
+  echo "  prefix=$prefix" >> config.local
+  echo "fi" >> config.local
+fi
+if test "$exec_prefix" != "" -a "$exec_prefix" != "NONE"; then
+  echo "if test \"\$exec_prefix\" = \"\" -o \"\$prefix\" = \"NONE\"; then" >> config.local
+  echo "  exec_prefix=$exec_prefix" >> config.local
+  echo "fi" >> config.local
+fi
+echo "TK_LIBRARY_NAME='$TK_LIBRARY_NAME'" >> config.local
+echo "noshlib=$noshlib" >> config.local
+echo "nogcc=$nogcc" >> config.local
+echo "kanji=$kanji" >> config.local
+echo "tkicon=$tkicon" >> config.local
+echo "tksteal=$tksteal" >> config.local
+echo "tkmegawidget=$tkmegawidget" >> config.local
+echo "tkmegawidget_des=$tkmegawidget_des" >> config.local
+echo "tkmegawidget_localdes=$tkmegawidget_localdes" >> config.local
+echo "tkmegawidget_debug=$tkmegawidget_debug" >> config.local
+echo "tkmobal=$tkmobal" >> config.local
+echo "tkcb=$tkcb" >> config.local
+echo "blt=$blt" >> config.local
+echo "turndial=$turndial" >> config.local
+echo "itcl=$itcl" >> config.local
+echo "tix=$tix" >> config.local
+echo "expect=$expect" >> config.local
+echo "tclX=$tclX" >> config.local
+echo "tcldp=$tcldp" >> config.local
+echo "xpm=$xpm" >> config.local
+echo "tclload=$tclload" >> config.local
+
+#--------------------------------------------------------------------
+#       This stuff must run after the "standard" Tk configure.
+#--------------------------------------------------------------------
+
+if test "$CC" = "gcc" -a "$PICFLAGS" != ""; then \
+  PICFLAGS="-fPIC"
+fi
+AC_SUBST(PICFLAGS)
+
+export MAKEFILE_LIST
+MAKEFILE_LIST="wish/Makefile"
+if test -d libtk; then
+  MAKEFILE_LIST="$MAKEFILE_LIST libtk/Makefile"
+fi
+if test -d libTkSteal; then
+  MAKEFILE_LIST="$MAKEFILE_LIST libTkSteal/Makefile"
+fi
+if test -d libTkMegaWidget; then
+  MAKEFILE_LIST="$MAKEFILE_LIST libTkMegaWidget/Makefile"
+fi
+if test -d libTkIcon; then
+  MAKEFILE_LIST="$MAKEFILE_LIST libTkIcon/Makefile"
+fi
+if test -d libTkMobal; then
+  MAKEFILE_LIST="$MAKEFILE_LIST libTkMobal/Makefile"
+fi
+if test -d libTkCB; then
+  MAKEFILE_LIST="$MAKEFILE_LIST libTkCB/Makefile"
+fi
+if test -d libdes; then
+  MAKEFILE_LIST="$MAKEFILE_LIST libdes/Makefile"
+fi
+
+AC_OUTPUT(Makefile $MAKEFILE_LIST)
+

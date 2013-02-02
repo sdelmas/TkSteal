@@ -1,0 +1,283 @@
+#!/bin/sh
+#
+# Convert the CPU-Company-SystemRelease to ObjectName
+# Support share library ObjectName including SVR4, SUN, HP, IBM. 
+# 
+case $1 in
+	vax-*-bsd*)			# vaxen running BSD
+		echo UNKNOWN	;;
+	vax-*-ultrix*)			# vaxen running ultrix
+		echo UNKNOWN	;;
+	vax-*-vms*)			# vaxen running VMS
+		echo UNKNOWN	;;
+	vax-*-sysv*)			# vaxen running system V
+		echo UNKNOWN	;;
+	tahoe-harris-*|tahoe-*-bsd*)	# Harris tahoe, using COFF.
+		echo UNKNOWN	;;
+	i370-*-mvs*)
+		echo UNKNOWN	;;
+	i[345]86-*-osfrose*)		# 386 using OSF/rose
+		echo UNKNOWN	;;
+	i[345]86-sequent-bsd*) 		# 80386 from Sequent
+		echo UNKNOWN	;;
+	i[345]86-next-*)
+		echo UNKNOWN	;;
+	i[345]86-*-bsd*)
+		echo UNKNOWN	;;
+	i[345]86-*-mach*)
+		echo UNKNOWN	;;
+	i[345]86-*-sco3.2v4*)	 	# 80386 running SCO 3.2v4 system
+		echo UNKNOWN	;;
+	i[345]86-*-sco*)		# 80386 running SCO system
+		echo UNKNOWN	;;
+	i[345]86-*-isc*)		# 80386 running ISC system
+		echo UNKNOWN	;;
+	i[345]86-ibm-aix*)		# IBM PS/2 running AIX
+		echo UNKNOWN	;;
+	i386-sun-sunos*)		# Sun i386 roadrunner
+		echo SUN	;;
+	i[345]86-*-linux*)              # Intel 80386's running Linux
+		echo UNKNOWN	;;
+	i486-ncr-sysv4*)		# NCR 3000 - i486 running system V.4
+		echo SVR4	;;
+	i[345]86-*-sysv4*)		# Intel 80386's running system V.4
+		echo SVR4	;;
+	i[345]86-sequent-sysv*)		# Sequent 80386's running system V
+		echo UNKNOWN	;;
+	i[345]86-*-sysv*)		# Intel 80386's running system V
+		echo UNKNOWN	;;
+	i[345]86-*-solaris2* | i[345]86-*-sunos5*)
+		echo UNKNOWN	;;
+	i[345]86-*-lynxos)
+		echo UNKNOWN	;;
+	i860-*-mach*)
+		echo UNKNOWN	;;
+	i860-*-sysv3*)
+		echo UNKNOWN	;;
+	i860-*-sysv4*)
+		echo SVR4	;;
+	i860-alliant-*)		# Alliant FX/2800
+		echo UNKNOWN	;;
+	i860-*-bsd*)
+		echo UNKNOWN	;;
+	elxsi-elxsi-*)
+		echo UNKNOWN	;;
+	sparc-tti-*)
+		echo UNKNOWN	;;
+	sparc-*-sunos4*)
+		echo SUN	;;
+	sparc-*-sunos3*)
+		echo SUN	;;
+	sparc-*-bsd*)
+		echo UNKNOWN	;;
+	sparc-*-sysv4*)
+		echo UNKNOWN	;;
+	sparc-*-solaris2* | sparc-*-sunos5*)
+		echo SVR4	;;
+	sparc-*-lynxos)
+		echo UNKNOWN	;;
+	sparclite-*-*)
+		echo UNKNOWN	;;
+	m68k-cbm-sysv4*)		# Commodore variant of V.4.
+		echo SVR4	;;
+	m68k-*-sysv4*)			# Motorola m68k's running system V.4
+		echo SVR4	;;
+	m68k-bull-sysv*)		# Bull DPX/2
+		echo UNKNOWN	;;
+	m68k-next-*)
+		echo UNKNOWN	;;
+	m68k-sun-sunos3*)
+		echo SUN	;;
+	m68k-sun-sunos*)		# For SunOS 4 (the default).
+		echo SUN	;;
+	m68k-sun-mach*)
+		echo UNKNOWN	;;
+	m68k-tti-*)
+		echo UNKNOWN	;;
+	m68k-hp-hpux*)	# HP 9000 series 300
+		echo UNKNOWN	;;
+	m68k-hp-bsd4.4*)		# HP 9000/3xx running 4.4bsd
+		echo UNKNOWN	;;
+	m68k-hp-bsd*)			# HP 9000/3xx running Berkeley Unix
+		echo UNKNOWN	;;
+	m68k-isi-bsd*)
+		echo UNKNOWN	;;
+	m68k-sony-newsos3*)
+		echo UNKNOWN	;;
+	m68k-sony-bsd* | m68k-sony-newsos*)
+		echo UNKNOWN	;;
+	m68k-altos-sysv*)		   # Altos 3068
+		echo UNKNOWN	;;
+	m68k-motorola-sysv*)
+		echo UNKNOWN	;;
+	m68k-crds-unos*)
+		echo UNKNOWN	;;
+	m68k-apollo-*)
+		echo UNKNOWN	;;
+        m68k-plexus-sysv*)
+		echo UNKNOWN	;;
+	m68k-ncr-sysv*)			# NCR Tower 32 SVR3
+		echo UNKNOWN	;;
+	m68k-*-sysv3*)			# Motorola m68k's running system V.3
+		echo UNKNOWN	;;
+	m68000-sun-sunos3*)
+		echo UNKNOWN	;;
+	m68000-sun-sunos4*)
+		echo UNKNOWN	;;
+	m68000-hp-hpux*)		# HP 9000 series 300
+		echo UNKNOWN	;;
+	m68000-hp-bsd*)			# HP 9000/200 running BSD
+		echo UNKNOWN	;;
+	m68000-att-sysv*)
+		echo UNKNOWN	;;
+	m68k-*-lynxos)
+		echo UNKNOWN	;;
+	m68000-convergent-sysv*)
+		echo UNKNOWN	;;
+	ns32k-sequent-bsd*)
+		echo UNKNOWN	;;
+	ns32k-encore-bsd*)
+		echo UNKNOWN	;;
+	ns32k-ns-genix*)
+		echo UNKNOWN	;;
+	ns32k-merlin-*)
+		echo UNKNOWN	;;
+	ns32k-tek6100-bsd*)
+		echo UNKNOWN	;;
+	ns32k-tek6200-bsd*)
+		echo UNKNOWN	;;
+	ns32k-pc532-mach*)
+		echo UNKNOWN	;;
+	ns32k-pc532-minix*)
+		echo UNKNOWN	;;
+	m88k-*-luna*)
+		echo UNKNOWN	;;
+	m88k-dg-dgux*)
+		echo UNKNOWN	;;
+	m88k-mot*-sysv4*)	#added by kev for Motorola delta machines
+		echo UNKNOWN	;;
+	m88k-*-sysv4*)
+		echo UNKNOWN	;;
+	m88k-dolphin-sysv3*)
+		echo UNKNOWN	;;
+	m88k-tektronix-sysv3)
+		echo UNKNOWN	;;
+	m88k-*-sysv3*)
+		echo UNKNOWN	;;
+	fx80-alliant-*)			# Alliant FX/80
+		echo UNKNOWN	;;
+	arm-*-riscix1.[01]*)		# Acorn RISC machine (early versions)
+		echo UNKNOWN	;;
+	arm-*-riscix*)			# Acorn RISC machine
+		echo UNKNOWN	;;
+	arm-*-*)			# generic version
+		echo UNKNOWN	;;
+	c1-convex-*)			# Convex C1
+		echo UNKNOWN	;;
+	c2-convex-*)			# Convex C2
+		echo UNKNOWN	;;
+	c32-convex-*)
+		echo UNKNOWN	;;
+	c34-convex-*)
+		echo UNKNOWN	;;
+	c38-convex-*)
+		echo UNKNOWN	;;
+	mips-sgi-irix5*)                # Mostly like a MIPS.
+		echo UNKNOWN	;;
+	mips-sgi-irix4loser*)		# Mostly like a MIPS.
+		echo UNKNOWN	;;
+	mips-sgi-irix4*)		# Mostly like a MIPS.
+		echo UNKNOWN	;;
+	mips-sgi-*)			# Mostly like a MIPS.
+		echo UNKNOWN	;;
+	mips-*-ultrix*)		# Decstation.
+		echo UNKNOWN	;;
+	mips-dec-osfrose*)	# Decstation running OSF/1 reference port with 		OSF/rose.
+		echo UNKNOWN	;;
+	mips-dec-osf*)			# Decstation running OSF/1 as shipped by 		DIGITAL
+		echo UNKNOWN	;;
+	mips-dec-bsd*)                  # Decstation running 4.4 BSD
+		echo UNKNOWN	;;
+	mips-sony-bsd* | mips-sony-newsos*)	# Sony NEWS 3600 or risc/news.
+		echo UNKNOWN	;;
+	mips-sony-sysv*)		# Sony NEWS 3800 with NEWSOS5.0.
+					# That is based on svr4.
+		# t-svr4 is not right because this system doesn't use ELF.
+		echo UNKNOWN	;;
+	mips-*-riscos[56789]bsd* | mips-*-riscos[56789]-bsd*)
+		echo UNKNOWN	;;
+	mips-*-bsd* | mips-*-riscosbsd* | mips-*-riscos[1234]bsd* \
+		| mips-*-riscos-bsd* | mips-*-riscos[1234]-bsd*)
+			# MIPS BSD 4.3, RISC-OS 4.0
+		echo UNKNOWN	;;
+	mips-*-riscos[56789]sysv4* | mips-*-riscos[56789]-sysv4*)
+		echo UNKNOWN	;;
+	mips-*-sysv4* | mips-*-riscos[1234]sysv4* | mips-*-riscossysv4* \
+		| mips-*-riscos[1234]-sysv4* | mips-*-riscos-sysv4*)
+		echo SVR4	;;
+	mips-*-riscos[56789]sysv* | mips-*-riscos[56788]-sysv*)
+		echo UNKNOWN	;;
+	mips-*-sysv* | mips-*riscos*sysv*)
+		echo UNKNOWN	;;
+	mips-*riscos[56789]*)			# Default MIPS RISC-OS 5.0.
+		echo UNKNOWN	;;
+	mips-*-*)				# Default MIPS RISC-OS 4.0.
+		echo UNKNOWN	;;
+	pyramid-*-*)
+		echo UNKNOWN	;;
+	tron-*-*)
+		echo UNKNOWN	;;
+	a29k-*-bsd*)
+		echo UNKNOWN	;;
+	a29k-*-*)			# Default a29k environment.
+		echo UNKNOWN	;;
+	romp-*-aos*)
+		echo UNKNOWN	;;
+	romp-*-mach*)
+		echo UNKNOWN	;;
+	rs6000-*-mach*)
+		echo UNKNOWN	;;
+	rs6000-ibm-aix3.[01]*)
+		echo IBM	;;
+	rs6000-ibm-aix*)
+		echo UNKNOWN	;;
+	powerpc-ibm-aix*)
+		echo UNKNOWN	;;
+	hppa1.1-*-mach*)
+		echo UNKNOWN	;;
+	hppa1.0-*-mach*)
+		echo UNKNOWN	;;
+	hppa1.1-*-bsd*)
+		echo UNKNOWN	;;
+	hppa1.0-*-bsd*)
+		echo UNKNOWN	;;
+	hppa1.0-*-hpux7*)
+		echo UNKNOWN	;;
+	hppa1.0-*-hpux8.02*)
+		echo UNKNOWN	;;
+	hppa1.1-*-hpux8.02*)
+		echo UNKNOWN	;;
+	hppa1.1-*-hpux9.*)
+		echo HP		;;
+	hppa1.1-*-hpux*)
+		echo HP		;;
+	hppa1.1-*-hpux)
+		echo HP		;;
+	hppa1.0-*-hpux9.*)
+		echo HP		;;
+	we32k-att-sysv*)
+		echo UNKNOWN	;;
+	h8300-*-*)
+		echo UNKNOWN	;;
+	sh-*-*)
+		echo UNKNOWN	;;
+	alpha-*-osf*)
+		echo UNKNOWN	;;
+	i960-*-*)			# Default i960 environment.
+		echo UNKNOWN	;;
+	clipper-intergraph-clix*)
+		echo UNKNOWN	;;
+	*)
+		echo UNKNOWN	;;
+esac
+exit 0

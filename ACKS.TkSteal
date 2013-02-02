@@ -1,0 +1,52 @@
+Thanks to the people listed here for their help and/or their software :-):
+
+---------------------
+The TkSteal patch is based upon the (great) TCL/TK package from:
+John Ousterhout (john.ousterhout@eng.sun.com)
+
+and the (greater (bigger :-)) Emacs from:
+Free Software Foundation, Inc.
+(COPYING is included !).
+
+and the Tcl Distributed Programming (Tcl-DP) from:
+Lawrence A. Rowe and Brian Smith
+Computer Science Division-EECS
+University of California at Berkeley.
+
+and the "advise" lisp code from:
+Thinking machine.
+
+The shared library support has been derived from the
+tcltk_shlib package written by:
+Xiaokun Zhu (xiaokun@stats.gla.ac.uk)
+
+Parts of the code to pick colors with a mouseclick was
+derieved from the code in xmag(1X) written by:
+Dave Sternlicht
+
+---------------------
+
+my little sister for massive spellchecking!!
+
+David.Bristor
+Dietmar Theobald
+Fritz Heinrichmeyer
+Heiko Muenkel
+Jeff Zacks
+Joel Fine
+Marc Levoy
+Mark Diekhans
+Mike Clarkson
+Mike Scheidler
+Olaf Gerloff
+Olivier Reymann
+Omar El-Ghazzawy
+Pascal Meheut
+Peter Bartl
+Ray Johnson
+Samuel Richter
+Thomas Menzel
+Vishy Narayanan
+
+...
+hopefully YOU with additional ideas !!!

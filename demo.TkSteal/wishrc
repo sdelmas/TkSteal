@@ -1,0 +1,8 @@
+global argv
+if {"$argv" == "XTERMWISH"} {
+  catch "source ../library/tkSteal.tcl"
+  tkSteal .xterm -command {} -name steal-wish -width 80 -height 25
+  pack .xterm -side top -fill both -expand 1
+  wm maxsize . 1000 1000
+}
+

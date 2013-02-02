@@ -1,0 +1,426 @@
+'\"
+'\" Copyright 1995 Sven Delmas
+'\" All rights reserved.
+'\" See the file COPYRIGHT for the copyright notes.
+'\"
+'\" $Header: tkSteal.n[5.1] Sun Feb 18 12:54:16 1996 sven@(none) frozen $
+'\" 
+'\" The manual page is based upon the manual page style from:
+'\"
+'\" Copyright (c) 1993 The Regents of the University of California.
+'\" Copyright (c) 1994 Sun Microsystems, Inc.
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES. This file is
+'\" part of the Tk distribution and is included in the file COPYRIGHT.
+'\" 
+'\" The definitions below are for supplemental macros used in Tcl/Tk
+'\" manual entries.
+'\"
+'\" .HS name section [date [version]]
+'\"	Replacement for .TH in other man pages.  See below for valid
+'\"	section names.
+'\"
+'\" .AP type name in/out [indent]
+'\"	Start paragraph describing an argument to a library procedure.
+'\"	type is type of argument (int, etc.), in/out is either "in", "out",
+'\"	or "in/out" to describe whether procedure reads or modifies arg,
+'\"	and indent is equivalent to second arg of .IP (shouldn't ever be
+'\"	needed;  use .AS below instead)
+'\"
+'\" .AS [type [name]]
+'\"	Give maximum sizes of arguments for setting tab stops.  Type and
+'\"	name are examples of largest possible arguments that will be passed
+'\"	to .AP later.  If args are omitted, default tab stops are used.
+'\"
+'\" .BS
+'\"	Start box enclosure.  From here until next .BE, everything will be
+'\"	enclosed in one large box.
+'\"
+'\" .BE
+'\"	End of box enclosure.
+'\"
+'\" .VS
+'\"	Begin vertical sidebar, for use in marking newly-changed parts
+'\"	of man pages.
+'\"
+'\" .VE
+'\"	End of vertical sidebar.
+'\"
+'\" .DS
+'\"	Begin an indented unfilled display.
+'\"
+'\" .DE
+'\"	End of indented unfilled display.
+'\"
+'\" @(#) man.macros 1.1 94/08/09 13:07:19
+.\"
+'\"	# Heading for Tcl/Tk man pages
+.de HS
+.ds ^3 \\0
+.if !"\\$3"" .ds ^3 \\$3
+.if '\\$2'cmds'      .TH "\\$1" 1 "\\*(^3" "\\$4" "\\$5"
+.if '\\$2'lib'       .TH "\\$1" 3 "\\*(^3" "\\$4" "\\$5"
+.if '\\$2'ncmds'     .TH "\\$1" n "\\*(^3" "\\$4" "\\$5"
+.if '\\$2'tcl'       .TH "\\$1" n "\\*(^3"  Tcl   "Tcl Built-In Commands"
+.if '\\$2'tk'        .TH "\\$1" n "\\*(^3"  Tk    "Tk Commands"
+.if '\\$2'tclc'      .TH "\\$1" 3 "\\*(^3"  Tcl   "Tcl Library Procedures"
+.if '\\$2'tkc'       .TH "\\$1" 3 "\\*(^3"  Tk    "Tk Library Procedures"
+.if '\\$2'tclcmds'   .TH "\\$1" 1 "\\*(^3"  Tk    "Tcl Applications"
+.if '\\$2'tkcmds'    .TH "\\$1" 1 "\\*(^3"  Tk    "Tk Applications"
+.if t .wh -1.3i ^B
+.nr ^l \\n(.l
+.ad b
+..
+'\"	# Start an argument description
+.de AP
+.ie !"\\$4"" .TP \\$4
+.el \{\
+.   ie !"\\$2"" .TP \\n()Cu
+.   el          .TP 15
+.\}
+.ie !"\\$3"" \{\
+.ta \\n()Au \\n()Bu
+\&\\$1	\\fI\\$2\\fP	(\\$3)
+.\".b
+.\}
+.el \{\
+.br
+.ie !"\\$2"" \{\
+\&\\$1	\\fI\\$2\\fP
+.\}
+.el \{\
+\&\\fI\\$1\\fP
+.\}
+.\}
+..
+'\"	# define tabbing values for .AP
+.de AS
+.nr )A 10n
+.if !"\\$1"" .nr )A \\w'\\$1'u+3n
+.nr )B \\n()Au+15n
+.\"
+.if !"\\$2"" .nr )B \\w'\\$2'u+\\n()Au+3n
+.nr )C \\n()Bu+\\w'(in/out)'u+2n
+..
+'\"	# BS - start boxed text
+'\"	# ^y = starting y location
+'\"	# ^b = 1
+.de BS
+.br
+.mk ^y
+.nr ^b 1u
+.if n .nf
+.if n .ti 0
+.if n \l'\\n(.lu\(ul'
+.if n .fi
+..
+'\"	# BE - end boxed text (draw box now)
+.de BE
+.nf
+.ti 0
+.mk ^t
+.ie n \l'\\n(^lu\(ul'
+.el \{\
+.\"	Draw four-sided box normally, but don't draw top of
+.\"	box if the box started on an earlier page.
+.ie !\\n(^b-1 \{\
+\h'-1.5n'\L'|\\n(^yu-1v'\l'\\n(^lu+3n\(ul'\L'\\n(^tu+1v-\\n(^yu'\l'|0u-1.5n\(ul'
+.\}
+.el \}\
+\h'-1.5n'\L'|\\n(^yu-1v'\h'\\n(^lu+3n'\L'\\n(^tu+1v-\\n(^yu'\l'|0u-1.5n\(ul'
+.\}
+.\}
+.fi
+.br
+.nr ^b 0
+..
+'\"	# VS - start vertical sidebar
+'\"	# ^Y = starting y location
+'\"	# ^v = 1 (for troff;  for nroff this doesn't matter)
+.de VS
+.mk ^Y
+.ie n 'mc \s12\(br\s0
+.el .nr ^v 1u
+..
+'\"	# VE - end of vertical sidebar
+.de VE
+.ie n 'mc
+.el \{\
+.ev 2
+.nf
+.ti 0
+.mk ^t
+\h'|\\n(^lu+3n'\L'|\\n(^Yu-1v\(bv'\v'\\n(^tu+1v-\\n(^Yu'\h'-|\\n(^lu+3n'
+.sp -1
+.fi
+.ev
+.\}
+.nr ^v 0
+..
+'\"	# Special macro to handle page bottom:  finish off current
+'\"	# box/sidebar if in box/sidebar mode, then invoked standard
+'\"	# page bottom macro.
+.de ^B
+.ev 2
+'ti 0
+'nf
+.mk ^t
+.if \\n(^b \{\
+.\"	Draw three-sided box if this is the box's first page,
+.\"	draw two sides but no top otherwise.
+.ie !\\n(^b-1 \h'-1.5n'\L'|\\n(^yu-1v'\l'\\n(^lu+3n\(ul'\L'\\n(^tu+1v-\\n(^yu'\h'|0u'\c
+.el \h'-1.5n'\L'|\\n(^yu-1v'\h'\\n(^lu+3n'\L'\\n(^tu+1v-\\n(^yu'\h'|0u'\c
+.\}
+.if \\n(^v \{\
+.nr ^x \\n(^tu+1v-\\n(^Yu
+\kx\h'-\\nxu'\h'|\\n(^lu+3n'\ky\L'-\\n(^xu'\v'\\n(^xu'\h'|0u'\c
+.\}
+.bp
+'fi
+.ev
+.if \\n(^b \{\
+.mk ^y
+.nr ^b 2
+.\}
+.if \\n(^v \{\
+.mk ^Y
+.\}
+..
+'\"	# DS - begin display
+.de DS
+.RS
+.nf
+.sp
+..
+'\"	# DE - end display
+.de DE
+.fi
+.RE
+.sp
+..
+.HS tkSteal cmds
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+tkSteal \- Create and manipulate TkSteal widgets
+.SH SYNOPSIS
+\fBtkSteal\fI \fIpathName \fR?\fIoptions\fR?
+.SH "STANDARD OPTIONS"
+.LP
+.nf
+.ta 4c 8c 12c
+\fBbackground\fR	\fBforeground\fR	\fBheight\fR	\fBtakefocus\fR
+\fBborderwidth\fR	\fBfont\fR	\fBrelief\fR	\fBwidth\fR
+.fi
+.LP
+See the ``options'' manual entry for details on the standard options.
+.SH "WIDGET-SPECIFIC OPTIONS"
+.LP
+.nf
+Name:	\fBcommand\fR
+Class:	\fBCommand\fR
+Command-Line Switch:	\fB\-command\fR
+.fi
+.IP
+Specifies the executable that is called. The command usually
+calls the program with a special name, so that TkSteal can
+wait for the appearance of this window (specified with
+-name and referenced by the \fIname\fR variable in the command).
+There are several variables that can be specified in the
+command. The variables \fIwidth\fR and \fIheight\fR are replaced
+by the specified widget size. The variables \fIwindowid\fR and
+\fIstealwindowid\fR are expanded to the passed window id
+(-windowid) or the window id of the TkSteal widget. The
+standard resources are referred to by their corresponding
+variable name (e.g. \fI$background\fR). 
+.LP
+.nf
+Name:	\fBname\fR
+Class:	\fBName\fR
+Command-Line Switch:	\fB\-name\fR
+.fi
+.IP
+Specifies the name of the window that will appear on the
+screen. This name is used to select the window for
+reparenting.
+.LP
+.nf
+Name:	\fBstealWindowId\fR
+Class:	\fBWindowId\fR
+Command-Line Switch:	\fB\-stealwindowid\fR
+.fi
+.IP
+Specifies the window id of the TkSteal widget. This window
+id is used as the parent for the embedded application
+window.
+.LP
+.nf
+Name:	\fBwindowId\fR
+Class:	\fBWindowId\fR
+Command-Line Switch:	\fB\-windowid\fR
+.fi
+.IP
+Specifies the window id of the embedded application. This
+window id is reparented.
+.BE
+
+.SH DESCRIPTION
+.PP
+The \fBtkSteal\fR command creates a new window (given by the 
+\fIpathName\fR argument) and makes it into a TkSteal widget.
+Additional options, as described above, may be specified on the
+command line or in the option database to configure aspects
+of the TkSteal widget such as its default background color and
+relief. The \fBtkSteal\fR command returns the path name of the
+new window.
+.PP
+A TkSteal widget displays a reparented window from an
+external X application. This widget may serve as a prototype
+for the user's own developments in this area. By implementing
+a communication to the embedded application, this new "widget"
+can implement complex functionality, without changing Tk and/or 
+the embedded application (like emacs).
+
+.SH "WIDGET COMMAND"
+.PP
+The \fBtkSteal\fR command creates a new Tcl command the name
+of which is the same as the path name of the TkSteal's
+window. This command may be used to invoke various
+operations on the widget. It has the following general form:
+.DS C
+\fIpathName option \fR?\fIarg arg ...\fR?
+.DE
+\fIPathName\fR is the name of the command. It is the same as
+the TkSteal widget's path name. \fIOption\fR and the \fIarg\fRs
+determine the exact behavior of the command.  The following
+commands are possible for TkSteal widgets:
+.TP
+\fIpathName \fBbuttonclick\fR \fIbutton\fR \fI?modifier\fR?
+This command sends a button click (ButtonDown + ButtonUp) to
+the embedded application. The first parameter specifies
+which button is clicked, and the optional second parameter
+specifies the Modifier.
+.TP
+\fIpathName \fBbuttonpress\fR \fIbutton\fR \fI?modifier\fR?
+This command sends a button press to the embedded
+application. The first parameter specifies which button is
+pressed, and the optional second parameter specifies the
+Modifier.
+.TP
+\fIpathName \fBbuttonrelease\fR \fIbutton\fR \fI?modifier\fR?
+This command sends a button release to the embedded
+application. The first parameter specifies which button is
+released, and the optional second parameter specifies the
+Modifier.
+.TP
+\fIpathName \fBconfigure\fR ?\fIoption\fR? \fI?value option value ...\fR?
+Queries or modifies the configuration options of the widget.
+If no \fIoption\fR is specified, returns a list describing
+all available options for \fIpathName\fR (see
+\fBTk_ConfigureInfo\fR for information on the format of this
+list). If \fIoption\fR is specified with no \fIvalue\fR,
+the command returns a list describing the one named
+"option" (this list will be identical to the corresponding
+sublist of the value returned if no \fIoption\fR is
+specified).  If one or more \fIoption\-value\fR pairs are
+specified, the command modifies the given widget option(s)
+to have the given value(s); in this case, the command
+returns an empty string. \fIOption\fR may have any of the
+values accepted by the \fBtkSteal\fR command.
+.TP
+\fIpathName \fBfocusin\fR 
+This command sends a focus in event to the embedded
+application.
+.TP
+\fIpathName \fBfocusout\fR 
+This command sends a focus out event to the embedded
+application.
+.TP
+\fIpathName \fBkeyclick\fR \fIkeysym\fR \fI?modifier\fR?
+This command sends a key click (KeyDown + KeyUp) to
+the embedded application. The first parameter specifies
+which key is clicked, and the optional second parameter
+specifies the Modifier. The keysym can be every keysym
+specified in <X11/keysymdef.h>.
+.TP
+\fIpathName \fBkeypress\fR \fIkeysym\fR \fI?modifier\fR?
+This command sends a key press to the embedded application.
+The first parameter specifies which key is pressed, and
+the optional second parameter specifies the Modifier. The
+keysym can be every keysym specified in <X11/keysymdef.h>.
+.TP
+\fIpathName \fBkeyrelease\fR \fIkeysym\fR \fI?modifier\fR?
+This command sends a key release to the embedded
+application. The first parameter specifies which key is
+released, and the optional second parameter specifies the
+Modifier. The keysym can be every keysym specified in
+<X11/keysymdef.h>.
+.TP
+\fIpathName \fBsendstring\fR \fIstring\fR ?\fIinterval\fR?
+This command sends a complete string to the embedded
+application. The string can contain a standard character
+(e.g. "abCDde+-?"), modifiers enclosed in <> (e.g.
+"ab<Control>n"), keysyms also enclosed in <> (e.g.
+"ab<Enter>"), and the special modifier extensions "Press"
+and "Release" (e.g. "ab<Press-Shift>aaa<Release-Shift>").
+The escape sequences '\\t' (for tabulator), '\\r' (for
+return), '\\n' (for return), and '\\b' (for backspace) are
+also accepted. The optional interval value can be used to
+add a delay to the keypress events (to emulate some kind of
+user speed typing). The value is given in seconds.
+.TP
+\fIpathName \fBmotion\fR \fIx\fR \fIy\fR
+This command places the mouse pointer to the specified
+position.
+.TP
+\fIpathName \fBredisplay\fR
+This command redisplays the widget (by sending an configure
+event to the embedded application).
+.TP
+\fIpathName \fBstoptksteal\fR
+This command terminates the running embedded process.
+.RE
+
+.SH BINDINGS
+.PP
+The TkSteal widget does not allow special bindings. This is
+because reparenting is used which means that the events are
+passed directly to the child widget.
+
+.SH IMPLEMENTATION
+.PP
+I tried to keep the changes to Tk as small as possible. The
+changes to Tk only add one new command to Tk (xaccess(n)). If
+you don't use the new command, you will not notice any
+changes compared to the standard wish.
+
+.SH "PERFORMANCE ISSUES"
+.PP
+Performance is a critical point with the TkSteal widget.
+Each created widget runs as a separate process. This means you
+should be careful with the number of widgets.
+
+.SH "KNOWN PROBLEMS"
+.PP
+.\"
+.IP "\(bu"
+If you are using -width and -height to set the
+geometry of the tkSteal widget, and get a locked
+server or a X server error about insufficient 
+memory, your embedded application may use a grid
+for its geometry. In this case setting the widget
+geometry to something like 500x400 will result in
+a "real" geometry of something like 5000x5000.
+Just set the geometry to the correct gridded
+value (e.g. for xterm something like "-width 25
+-height 80").
+
+.SH BUGS
+.PP
+.\"
+.IP "\(bu"
+Surely, there are many bugs.
+
+.SH KEYWORDS
+widget, reparenting, xaccess
