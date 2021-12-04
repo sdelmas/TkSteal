@@ -150,7 +150,7 @@ ITCL_LIBS = @ITCL_LIBS@
 ITCL_LIB = @ITCL_LIB@
 
 # To build with TIX support, adapt the following lines:
-#  -DUSE_TIX           ... libtix (TIX support)
+#  -DUSE_TIX           ... libTix (TIX support)
 #
 TIX_CFLAGS = @TIX_CFLAGS@
 TIX_OBJS = @TIX_OBJS@

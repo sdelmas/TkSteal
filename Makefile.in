@@ -77,7 +77,7 @@ TK_DIR =	@TK_SOURCE@
 TK_BIN_DIR =	@TK_SOURCE@
 
 # The command that is used to ling tcl and tk into wish.
-TCLTK_LD_CMD=	@TCLTK_LD_CMD@
+TCLTK_LD_CMD=	-ltk -ltcl
 
 # To change the compiler switches, for example to change from -O
 # to -g, change the following line:

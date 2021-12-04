@@ -3023,13 +3023,13 @@ fi
     TIX_CFLAGS="-DUSE_TIX"
     TIX_LIBS="-L\${LIB_DIR} -ltix"
   else
-    echo "searching for a libtix.a in ../tix/src"
-    if test -f ../tix/src/libtix.a; then
-      echo "using ../tix/src/libtix.a instead of a globally installed libtix.a"
+    echo "searching for a libTix.a in ../tix/src"
+    if test -f ../tix/src/libTix.a; then
+      echo "using ../tix/src/libTix.a instead of a globally installed libTix.a"
       TIX_CFLAGS="-DUSE_TIX -I../../tix/src"
-      TIX_LIBS="../../tix/src/libtix.a"
+      TIX_LIBS="../../tix/src/libTix.a"
     else
-      echo "WARNING: Could not find a libtix.a!"
+      echo "WARNING: Could not find a libTix.a!"
     fi
   fi
 fi

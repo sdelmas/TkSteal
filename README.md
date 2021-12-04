@@ -6,14 +6,53 @@ See the file COPYRIGHT for the copyright notes.
 
 Changes:
 --------
-        - Tk 4.0 adaptions
-        - Tk 4.0 (or better the lack of TkPixmap) makes
-          it impossible to embed ghostscript, so tkgs
-          was removed.
-        - Enhanced configuration
-	- Added support for retrieving the color under
-          the mouse pointer (used by my color selector).
-        - Some minor bug fixes
+        - Incorporated changes from Eric Lindblad to compile
+          with Tck/Tk 8.6.x. This only fixes Tck/Tk, other
+          libs are no longer supported really.
+          Thanks Eric :-)... long time since I did anything
+          with this code. 
+
+
+Newer Tcl/Tk's past 4.0.
+------------------------
+I haven't done anything with this code base for ~ 20 years,
+so things are quite of of date. Eric submitted a number of 
+changes and suggestions, which I gladly share, however my
+life has moved on from this, so I won't have time to
+dedicate to this. If anyone wants to take over, happy
+to pass the torch. Good old times, but it seems that a lot
+of stuff has dried up, so I hope this remains useful to
+some folks.
+
+I will enable wiki's for all my projects, so folks can
+share notes if there is any interest.
+
+Notes from Eric:
+  Running the configure script with the option
+  --with-config-local picks up the system installed
+  shared libaries for the following.
+ 
+  Debian 11.1
+
+  blt=1
+ 
+  Slackware 15.0
+ 
+  itcl=1
+  tix=1
+ 
+  I've been unsuccessful using config.local for a system installed
+  tclx shared library.
+ 
+  TCL-DP 3 series has libraries which do not exist in the 4 series.
+ 
+  Another indicated change - aside from that of wish/tkAppInit.c - is
+  that libtix is now named libTix. I changed that in the config file 
+  based upon that comment.
+
+ 
+  Neither TCL-DP nor Tix have been updated for Tcl 8.6 and one must
+  use the flag -DUSE_INTERP_RESULT.
 
 
 What is TkSteal ?
